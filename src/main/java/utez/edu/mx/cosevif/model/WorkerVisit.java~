@@ -1,0 +1,23 @@
+package utez.edu.mx.cosevif.model;
+
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.LocalDateTime;
+
+@Document(collection = "workerVisits")
+public class WorkerVisit {
+
+    @Id
+    private String id;
+    private String residentId;
+    private String houseId;
+    private String workerName;
+    private int age;
+    private String address;
+    private String inePhoto; // 🔹 Foto de la INE en formato Base64
+    private LocalDateTime dateTime;
+
+    
+}

@@ -1,11 +1,7 @@
 package utez.edu.mx.cosevif.model;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.util.List;
-
 
 @Document(collection = "users")
 public class User {
@@ -13,13 +9,12 @@ public class User {
     private String id;
     private String username;
     private String password;
-//    private Role role;
+    private String role;  // Un solo rol por usuario
 
-    @DBRef // Relación con la colección "roles"
-    private Role role;
+    public User() {
+    }
 
-
-    public User(String username, String password, Role role) {
+    public User(String username, String password, String role) {
         this.username = username;
         this.password = password;
         this.role = role;
@@ -49,13 +44,11 @@ public class User {
         this.password = password;
     }
 
-    public Role getRole() {
+    public String getRole() {
         return role;
     }
 
-    public void setRole(Role role) {
+    public void setRole(String role) {
         this.role = role;
     }
-
-    // Getters y Setters
 }
