@@ -11,6 +11,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
+
+import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -18,11 +23,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtTokenFilter jwtTokenFilter) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ Permitir CORS
                 .csrf().disable()
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/auth/resident/login").permitAll() // Permitir login sin autenticación
-                        .requestMatchers(HttpMethod.POST, "/auth/admin/login").permitAll() // Login admin permitido
-                        .requestMatchers(HttpMethod.POST, "/users/register").permitAll() // Permitir registro
+                        .requestMatchers(HttpMethod.POST, "/auth/resident/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/admin/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/users/register").permitAll()
 
                         // 🔥 Rutas accesibles solo para ADMIN
                         .requestMatchers("/admin/**").hasAuthority("ADMIN")
@@ -33,18 +39,33 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/auth/resident/profile").hasAuthority("RESIDENT")
                         .requestMatchers("/resident/**").hasAuthority("RESIDENT")
 
-                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll() // Permitir login
-                        .requestMatchers(HttpMethod.POST, "/admin/houses").hasAuthority("ADMIN")  // ✅ Permitir solo a ADMIN
+                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/admin/houses").hasAuthority("ADMIN")
 
                         // 🔥 Permitir acceso público a imágenes
-                        .requestMatchers("/uploads/**").permitAll()  // 🔥 Permitir acceso público a imágenes
+                        .requestMatchers("/uploads/**").permitAll()
 
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class); // 🔥 Agregar filtro JWT
+                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    // 🔥 Agregar configuración de CORS
+    @Bean
+    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration corsConfig = new CorsConfiguration();
+        corsConfig.setAllowedOrigins(List.of("http://localhost:5173")); // ⚠️ Ajusta al puerto de React
+        corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        corsConfig.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        corsConfig.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", corsConfig);
+
+        return source;
     }
 
     @Bean
