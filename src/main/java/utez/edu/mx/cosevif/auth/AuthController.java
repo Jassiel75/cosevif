@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.*;
 import utez.edu.mx.cosevif.dto.JwtResponse;
 import utez.edu.mx.cosevif.dto.LoginRequest;
 
+import utez.edu.mx.cosevif.dto.LoginResponse;
 import utez.edu.mx.cosevif.service.AuthService;
 
 
@@ -19,8 +20,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<JwtResponse> login(@RequestBody LoginRequest request) {
-        String token = authService.login(request.getUsername(), request.getPassword());
-        return ResponseEntity.ok(new JwtResponse(token));
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+        LoginResponse response = authService.login(request.getUsername(), request.getPassword());
+        System.out.println("Respuesta Login: " + response.getToken() + " - " + response.getId() + " - " + response.getUsername() + " - " + response.getRole());
+        return ResponseEntity.ok(response);
     }
 }

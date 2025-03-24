@@ -10,7 +10,9 @@ import utez.edu.mx.cosevif.repository.HouseRepository;
 import utez.edu.mx.cosevif.repository.ResidentRepository;
 import utez.edu.mx.cosevif.security.JwtTokenProvider;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -51,7 +53,14 @@ public class ResidentService {
 
         String token = jwtTokenProvider.generateToken(resident.getEmail(), "RESIDENT");
 
-        return ResponseEntity.ok().body("{\"token\":\"" + token + "\"}");
+        // 🔥 NUEVO: Enviar también el id, username y role
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", token);
+        response.put("id", resident.getId());
+        response.put("username", resident.getEmail());
+        response.put("role", "RESIDENT");
+
+        return ResponseEntity.ok(response);
     }
 
     // 🔹 Obtener el perfil del residente autenticado
