@@ -36,8 +36,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         try {
             if (token != null && jwtTokenProvider.validateToken(token)) {
                 String username = jwtTokenProvider.getUsernameFromToken(token);
+                String role = jwtTokenProvider.getRoleFromToken(token); // Obtener el rol del token
+
+                // Dependiendo del rol, cargar los detalles del usuario adecuado (Admin, Guardia, etc.)
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
+                // Asignar el rol correcto extraído del token
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
