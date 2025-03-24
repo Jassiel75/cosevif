@@ -19,8 +19,25 @@ public class Guard {
     private String address;
     private String street;
     private String phone;
+    private String role;  // Un solo rol por usuario
 
-    public Guard() {}
+    public Guard() {
+    }
+
+    public Guard(String id, String username, String password, String name, String lastName, int age, LocalDate birthDate, String email, String address, String street, String phone, String role) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.name = name;
+        this.lastName = lastName;
+        this.age = age;
+        this.birthDate = birthDate;
+        this.email = email;
+        this.address = address;
+        this.street = street;
+        this.phone = phone;
+        this.role = role;
+    }
 
     public String getId() {
         return id;
@@ -108,5 +125,13 @@ public class Guard {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

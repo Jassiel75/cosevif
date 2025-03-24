@@ -30,10 +30,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/admin/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/register").permitAll()
 
+                        .requestMatchers(HttpMethod.POST, "/auth/guard/login").permitAll()  // 🔥 Agregado para el guardia
+                        .requestMatchers("/guard/**").hasAuthority("GUARDIA")
+
+
+
                         // 🔥 Rutas accesibles solo para ADMIN
                         .requestMatchers("/admin/**").hasAuthority("ADMIN")
                         .requestMatchers("/admin/houses/**").hasAuthority("ADMIN")
-                        .requestMatchers("/admin/guards/**").hasAuthority("ADMIN")
+                        .requestMatchers("/admin/guard/**").hasAuthority("ADMIN")
 
                         // 🔥 Rutas accesibles solo para RESIDENT
                         .requestMatchers(HttpMethod.GET, "/auth/resident/profile").hasAuthority("RESIDENT")
@@ -44,6 +49,10 @@ public class SecurityConfig {
 
                         // 🔥 Permitir acceso público a imágenes
                         .requestMatchers("/uploads/**").permitAll()
+
+
+
+
 
                         .anyRequest().authenticated()
                 )

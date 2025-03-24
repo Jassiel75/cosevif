@@ -74,4 +74,12 @@ public class JwtTokenProvider {
                 .getExpiration();
         return expiration.before(new Date());
     }
+    public String getRoleFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(jwtSecret)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("role", String.class);  // Extraer el rol del token
+    }
 }

@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface GuardRepository  extends MongoRepository<Guard, String> {
     Optional<Guard> findByUsername(String username);
+
 }
