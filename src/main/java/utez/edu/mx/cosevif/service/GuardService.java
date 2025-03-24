@@ -8,6 +8,7 @@ import utez.edu.mx.cosevif.repository.GuardRepository;
 import utez.edu.mx.cosevif.security.JwtTokenProvider;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -43,22 +44,26 @@ public class GuardService {
         guardRepository.deleteById(id);
     }
 
-
-    // 🔹 Método de autenticación de guardia
-    public ResponseEntity<?> authenticateGuard(String username, String password) {
-        // Buscar al guardia por su username
-        Optional<Guard> guardOptional = guardRepository.findByUsername(username);
+    // Método de autenticación de guardia por teléfono
+    public ResponseEntity<?> authenticateGuard(String phone, String password) {
+        Optional<Guard> guardOptional = guardRepository.findByPhone(phone);
 
         if (guardOptional.isPresent() && passwordEncoder.matches(password, guardOptional.get().getPassword())) {
-            // Obtener el guardia de Optional
             Guard guard = guardOptional.get();
-            // Generar el token JWT con el username y el role
-            String token = jwtTokenProvider.generateToken(guard.getUsername(), "GUARDIA");
-            return ResponseEntity.ok().body("{\"token\":\"" + token + "\"}");
+            String token = jwtTokenProvider.generateToken(guard.getPhone(), "GUARDIA");
+
+            // 🔥 Retornamos un JSON más completo
+            return ResponseEntity.ok().body(Map.of(
+                    "token", token,
+                    "id", guard.getId(),
+                    "phone", guard.getPhone(),
+                    "username", guard.getUsername(),
+                    "name", guard.getName(),
+                    "lastName", guard.getLastName(),
+                    "role", "GUARDIA"
+            ));
         }
 
         return ResponseEntity.status(401).body("Credenciales incorrectas.");
     }
-
-
 }

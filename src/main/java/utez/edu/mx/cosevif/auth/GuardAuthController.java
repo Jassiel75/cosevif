@@ -22,6 +22,6 @@ public class GuardAuthController {
     // 🔹 Login para Guardias
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Guard guardRequest) {
-        return guardService.authenticateGuard(guardRequest.getUsername(), guardRequest.getPassword());
+        return guardService.authenticateGuard(guardRequest.getPhone(), guardRequest.getPassword());
     }
 }

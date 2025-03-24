@@ -34,33 +34,24 @@ public class ResidentService {
     }
 
     // 🔹 Método para autenticar residentes y devolver un Token JWT
-    public ResponseEntity<?> authenticateResident(String username, String password) {
-        Optional<Resident> residentOptional = residentRepository.findByEmail(username);
+    public ResponseEntity<?> authenticateResident(String email, String password) {
+        Optional<Resident> residentOptional = residentRepository.findByEmail(email);
 
-        if (residentOptional.isEmpty()) {
-            residentOptional = residentRepository.findByPhone(username);
+        if (residentOptional.isPresent() && passwordEncoder.matches(password, residentOptional.get().getPassword())) {
+            Resident resident = residentOptional.get();
+            String token = jwtTokenProvider.generateToken(resident.getEmail(), "RESIDENT");
+
+            return ResponseEntity.ok().body(Map.of(
+                    "token", token,
+                    "id", resident.getId(),
+                    "email", resident.getEmail(),
+                    "name", resident.getName(),
+                    "surnames", resident.getSurnames(),
+                    "role", "RESIDENT"
+            ));
         }
 
-        if (residentOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas.");
-        }
-
-        Resident resident = residentOptional.get();
-
-        if (!passwordEncoder.matches(password, resident.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas.");
-        }
-
-        String token = jwtTokenProvider.generateToken(resident.getEmail(), "RESIDENT");
-
-        // 🔥 NUEVO: Enviar también el id, username y role
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", token);
-        response.put("id", resident.getId());
-        response.put("username", resident.getEmail());
-        response.put("role", "RESIDENT");
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(401).body("Credenciales incorrectas.");
     }
 
     // 🔹 Obtener el perfil del residente autenticado

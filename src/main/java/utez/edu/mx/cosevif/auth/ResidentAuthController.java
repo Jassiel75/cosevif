@@ -18,7 +18,7 @@ public class ResidentAuthController {
     // 🔹 Login para residentes
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-        return residentService.authenticateResident(loginRequest.getUsername(), loginRequest.getPassword());
+        return residentService.authenticateResident(loginRequest.getEmail(), loginRequest.getPassword());
     }
 
     // 🔹 Obtener el perfil del residente autenticado
