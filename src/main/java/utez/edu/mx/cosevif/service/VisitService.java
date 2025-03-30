@@ -9,8 +9,6 @@ import com.google.zxing.client.j2se.MatrixToImageWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Base64;
-
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -22,19 +20,19 @@ import utez.edu.mx.cosevif.repository.ResidentRepository;
 import utez.edu.mx.cosevif.repository.VisitRepository;
 import utez.edu.mx.cosevif.security.JwtTokenProvider;
 
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class VisitService {
+
     private final VisitRepository visitRepository;
     private final ResidentRepository residentRepository;
-    private final HouseRepository houseRepository; // 🔥 Agregado para obtener el número de casa
+    private final HouseRepository houseRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
-    public VisitService(VisitRepository visitRepository,ResidentRepository residentRepository, JwtTokenProvider jwtTokenProvider, HouseRepository houseRepository) {
+    public VisitService(VisitRepository visitRepository, ResidentRepository residentRepository, JwtTokenProvider jwtTokenProvider, HouseRepository houseRepository) {
         this.visitRepository = visitRepository;
         this.jwtTokenProvider = jwtTokenProvider;
         this.houseRepository = houseRepository;
@@ -53,13 +51,13 @@ public class VisitService {
 
         Resident resident = residentOptional.get();
 
-        // ✅ Obtener el número de casa desde `houseId`
-        Optional<House> houseOptional = houseRepository.findById(resident.getHouseId());
-        int houseNumber = houseOptional.map(House::getHouseNumber).orElse(-1);
+        // ✅ Obtener la casa desde la relación (ya no usamos houseId, accedemos directamente al objeto House)
+        House house = resident.getHouse(); // Obtener el objeto House completo desde la relación
+        int houseNumber = house != null ? house.getHouseNumber() : -1;
 
         // ✅ Asignar datos de la visita
         visit.setResidentId(resident.getId());
-        visit.setHouseId(resident.getHouseId());
+        visit.setHouseId(resident.getHouse().getId());  // Sigue siendo necesario tener el ID de la casa para la relación en la base de datos
         visit.setStatus("PENDIENTE");
 
         // ✅ Generar el código QR si falta 1 hora o menos para la visita
@@ -109,5 +107,4 @@ public class VisitService {
 
         return visitRepository.findByResidentId(residentOptional.get().getId());
     }
-
 }

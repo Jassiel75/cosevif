@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/guard")
+@RequestMapping("admin/guards")
 public class GuardController {
 
     private final GuardService guardService;
@@ -34,6 +34,18 @@ public class GuardController {
         // Asignar el rol GUARDIA antes de guardar
         guard.setRole("GUARDIA");
         return ResponseEntity.ok(guardService.save(guard));
+    }
+
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateGuard(@PathVariable String id, @RequestBody Guard updatedGuard) {
+        Guard updated = guardService.updateGuard(id, updatedGuard);
+        if (updated != null) {
+            return ResponseEntity.ok(updated);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")

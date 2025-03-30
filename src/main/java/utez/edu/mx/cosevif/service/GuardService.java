@@ -66,4 +66,31 @@ public class GuardService {
 
         return ResponseEntity.status(401).body("Credenciales incorrectas.");
     }
+
+    public Guard updateGuard(String id, Guard updatedGuard) {
+        Optional<Guard> optionalGuard = guardRepository.findById(id);
+
+        if (optionalGuard.isPresent()) {
+            Guard existingGuard = optionalGuard.get();
+
+            existingGuard.setUsername(updatedGuard.getUsername());
+            existingGuard.setName(updatedGuard.getName());
+            existingGuard.setLastName(updatedGuard.getLastName());
+            existingGuard.setAge(updatedGuard.getAge());
+            existingGuard.setBirthDate(updatedGuard.getBirthDate());
+            existingGuard.setEmail(updatedGuard.getEmail());
+            existingGuard.setAddress(updatedGuard.getAddress());
+            existingGuard.setStreet(updatedGuard.getStreet());
+            existingGuard.setPhone(updatedGuard.getPhone());
+
+            // Solo actualiza la contraseña si viene una nueva
+            if (updatedGuard.getPassword() != null && !updatedGuard.getPassword().isBlank()) {
+                existingGuard.setPassword(passwordEncoder.encode(updatedGuard.getPassword()));
+            }
+
+            return guardRepository.save(existingGuard);
+        }
+
+        return null;
+    }
 }

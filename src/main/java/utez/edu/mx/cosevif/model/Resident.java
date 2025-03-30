@@ -2,6 +2,7 @@ package utez.edu.mx.cosevif.model;
 
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "residents")
@@ -17,12 +18,14 @@ public class Resident {
     private String street;
     private String phone;
     private String password;
-    private String houseId; // ID de la casa a la que pertenece el residente
+
+    @DBRef
+    private House house;  // Relación con la casa
 
     public Resident() {
     }
 
-    public Resident(String id, String name, String surnames, int age, String birthDate, String email, String address, String street, String phone, String password, String houseId) {
+    public Resident(String id, String name, String surnames, int age, String birthDate, String email, String address, String street, String phone, String password, House house) {
         this.id = id;
         this.name = name;
         this.surnames = surnames;
@@ -33,7 +36,7 @@ public class Resident {
         this.street = street;
         this.phone = phone;
         this.password = password;
-        this.houseId = houseId;
+        this.house = house;
     }
 
     public String getId() {
@@ -116,11 +119,11 @@ public class Resident {
         this.password = password;
     }
 
-    public String getHouseId() {
-        return houseId;
+    public House getHouse() {
+        return house;
     }
 
-    public void setHouseId(String houseId) {
-        this.houseId = houseId;
+    public void setHouse(House house) {
+        this.house = house;
     }
 }

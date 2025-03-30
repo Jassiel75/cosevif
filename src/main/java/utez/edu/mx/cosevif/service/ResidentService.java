@@ -17,20 +17,17 @@ import java.util.Optional;
 
 @Service
 public class ResidentService {
+
     private final ResidentRepository residentRepository;
     private final HouseRepository houseRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
-
-
 
     public ResidentService(ResidentRepository residentRepository, HouseRepository houseRepository, JwtTokenProvider jwtTokenProvider) {
         this.residentRepository = residentRepository;
         this.houseRepository = houseRepository;
         this.passwordEncoder = new BCryptPasswordEncoder();
         this.jwtTokenProvider = jwtTokenProvider;
-
-
     }
 
     // 🔹 Método para autenticar residentes y devolver un Token JWT
@@ -66,45 +63,64 @@ public class ResidentService {
         return ResponseEntity.ok(residentOptional.get());
     }
 
-
     // 🔹 3. Obtener todos los residentes (Solo Admin)
     public List<Resident> findAll() {
-        return residentRepository.findAll();
+        List<Resident> residents = residentRepository.findAll();
+
+        // Enriquecer los residentes con la casa asociada, si existe
+        for (Resident resident : residents) {
+            if (resident.getHouse() != null) { // Verifica si la casa está asociada
+                Optional<House> house = houseRepository.findById(resident.getHouse().getId());
+                house.ifPresent(resident::setHouse);  // Setear la casa completa en el residente
+            }
+        }
+
+        return residents;
     }
 
     // 🔹 4. Obtener un residente por ID (Solo Admin)
     public Optional<Resident> findById(String id) {
-        return residentRepository.findById(id);
+        Optional<Resident> resident = residentRepository.findById(id);
+        if (resident.isPresent() && resident.get().getHouse() != null) {  // Verifica si la casa está asociada
+            Optional<House> house = houseRepository.findById(resident.get().getHouse().getId());
+            house.ifPresent(res -> resident.get().setHouse(res));
+        }
+        return resident;
     }
+
     // 🔹 5. Registrar un nuevo residente (Solo Admin)
     public ResponseEntity<?> registerResident(Resident resident) {
-
-        // 🔹 Verificar si la casa existe
-        Optional<House> houseOptional = houseRepository.findById(resident.getHouseId());
+        // Verificar si la casa existe
+        Optional<House> houseOptional = houseRepository.findById(resident.getHouse().getId());
 
         if (houseOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("La casa no existe.");
         }
+
+        // Asignar la casa al residente
+        House house = houseOptional.get();
+        resident.setHouse(house);  // Establecer la casa en el residente
+
         // Verificar si ya existe un residente con el mismo teléfono
         if (!residentRepository.findByPhone(resident.getPhone()).isEmpty()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("El número de teléfono ya está registrado.");
         }
 
-        // 🔹 Verificar si la casa ya tiene un residente asignado
-        boolean residentExists = residentRepository.existsByHouseId(resident.getHouseId());
+        // Verificar si la casa ya tiene un residente asignado
+        boolean residentExists = residentRepository.existsByHouseId(resident.getHouse().getId());
         if (residentExists) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Esta casa ya tiene un residente asignado.");
         }
 
-        // 🔹 Verificar si el correo ya está registrado
+        // Verificar si el correo ya está registrado
         if (residentRepository.findByEmail(resident.getEmail()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("El correo ya está registrado.");
         }
 
-        // 🔹 Encriptar la contraseña antes de guardarla
+        // Encriptar la contraseña antes de guardarla
         resident.setPassword(passwordEncoder.encode(resident.getPassword()));
 
-        // 🔹 Guardar el residente en la base de datos
+        // Guardar el residente en la base de datos
         Resident savedResident = residentRepository.save(resident);
 
         return ResponseEntity.ok(savedResident);
@@ -121,20 +137,18 @@ public class ResidentService {
         Resident existingResident = residentOptional.get();
 
         // Verificar si la casa asignada es diferente a la actual
-        if (!existingResident.getHouseId().equals(updatedResident.getHouseId())) {
-            Optional<House> newHouseOptional = houseRepository.findById(updatedResident.getHouseId());
+        if (!existingResident.getHouse().getId().equals(updatedResident.getHouse().getId())) {
+            Optional<House> newHouseOptional = houseRepository.findById(updatedResident.getHouse().getId());
 
             if (newHouseOptional.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("La nueva casa no existe.");
             }
 
-
             // Verificar si la nueva casa ya tiene un residente asignado
-            if (residentRepository.existsByHouseId(updatedResident.getHouseId())) {
+            if (residentRepository.existsByHouseId(updatedResident.getHouse().getId())) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body("La nueva casa ya tiene un residente asignado.");
             }
         }
-
 
         // Actualizar los datos
         existingResident.setName(updatedResident.getName());
@@ -145,7 +159,7 @@ public class ResidentService {
         existingResident.setAddress(updatedResident.getAddress());
         existingResident.setStreet(updatedResident.getStreet());
         existingResident.setPhone(updatedResident.getPhone());
-        existingResident.setHouseId(updatedResident.getHouseId());
+        existingResident.setHouse(updatedResident.getHouse()); // Actualizar la casa
 
         // Verificar si se cambió la contraseña y encriptarla
         if (updatedResident.getPassword() != null && !updatedResident.getPassword().isEmpty()) {
@@ -156,29 +170,17 @@ public class ResidentService {
         return ResponseEntity.ok(savedResident);
     }
 
-
-
     // 🔹 7. Eliminar un residente (Solo Admin)
     public ResponseEntity<Void> deleteResident(String id) {
         Optional<Resident> residentOptional = residentRepository.findById(id);
 
         if (residentOptional.isPresent()) {
-            Resident resident = residentOptional.get();
-
-            // Liberar la casa
-            Optional<House> houseOptional = houseRepository.findById(resident.getHouseId());
-            houseOptional.ifPresent(house -> {
-                house.setId(null);
-                houseRepository.save(house);
-            });
-
+            // Simplemente eliminar el residente
+            // La casa seguirá existiendo en la base de datos y estará disponible para asignar a otro residente
             residentRepository.deleteById(id);
             return ResponseEntity.noContent().build();
         }
 
         return ResponseEntity.notFound().build();
     }
-
-
-
 }
