@@ -33,8 +33,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/guard/login").permitAll()  // 🔥 Agregado para el guardia
                         .requestMatchers("/guard/**").hasAuthority("GUARDIA")
 
-
-
                         // 🔥 Rutas accesibles solo para ADMIN
                         .requestMatchers("/admin/**").hasAuthority("ADMIN")
                         .requestMatchers("/admin/houses/**").hasAuthority("ADMIN")
@@ -43,16 +41,13 @@ public class SecurityConfig {
                         // 🔥 Rutas accesibles solo para RESIDENT
                         .requestMatchers(HttpMethod.GET, "/auth/resident/profile").hasAuthority("RESIDENT")
                         .requestMatchers("/resident/**").hasAuthority("RESIDENT")
+                        .requestMatchers(HttpMethod.POST, "/resident/visit").hasAuthority("RESIDENT")
 
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/admin/houses").hasAuthority("ADMIN")
 
                         // 🔥 Permitir acceso público a imágenes
                         .requestMatchers("/uploads/**").permitAll()
-
-
-
-
 
                         .anyRequest().authenticated()
                 )
@@ -66,16 +61,18 @@ public class SecurityConfig {
     @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(List.of("http://localhost:5173")); // ⚠️ Ajusta al puerto de React
+        corsConfig.setAllowedOriginPatterns(List.of("*")); // ✅ Permite todas las IPs (incluido móvil, web, etc.)
         corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        corsConfig.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        corsConfig.setAllowCredentials(true);
+        corsConfig.setAllowedHeaders(List.of("Authorization", "Content-Type", "Access-Control-Allow-Origin"));
+        corsConfig.setExposedHeaders(List.of("Authorization")); // ✅ Para permitir ver el token en frontend si es necesario
+        corsConfig.setAllowCredentials(true); // ⚠️ Importante si usas cookies o sesiones (aunque en tu caso no es obligatorio)
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfig);
-
         return source;
     }
+
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {

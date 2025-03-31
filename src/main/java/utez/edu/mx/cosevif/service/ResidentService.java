@@ -38,12 +38,14 @@ public class ResidentService {
             Resident resident = residentOptional.get();
             String token = jwtTokenProvider.generateToken(resident.getEmail(), "RESIDENT");
 
+            // 🔥 Agrega el houseId al JSON de respuesta
             return ResponseEntity.ok().body(Map.of(
                     "token", token,
                     "id", resident.getId(),
                     "email", resident.getEmail(),
                     "name", resident.getName(),
                     "surnames", resident.getSurnames(),
+                    "houseId", resident.getHouse().getId(),
                     "role", "RESIDENT"
             ));
         }
