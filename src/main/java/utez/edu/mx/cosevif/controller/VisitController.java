@@ -28,7 +28,7 @@ public class VisitController {
             return ResponseEntity.badRequest().body("Token inválido o no proporcionado.");
         }
 
-        String token = authHeader.replace("Bearer ", "").trim(); // ✅ Eliminar "Bearer " y espacios
+        String token = authHeader.replace("Bearer ", "").trim(); // Eliminar "Bearer " y espacios
 
         return visitService.registerVisit(token, visit);
     }
