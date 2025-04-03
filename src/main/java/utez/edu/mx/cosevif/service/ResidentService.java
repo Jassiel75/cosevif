@@ -1,4 +1,3 @@
-// ResidentService.java
 package utez.edu.mx.cosevif.service;
 
 import org.springframework.http.HttpStatus;
@@ -37,7 +36,7 @@ public class ResidentService {
 
         if (residentOptional.isPresent() && passwordEncoder.matches(password, residentOptional.get().getPassword())) {
             Resident resident = residentOptional.get();
-            String token = jwtTokenProvider.generateToken(resident.getEmail(), resident.getRole());
+            String token = jwtTokenProvider.generateToken(resident.getEmail(), "RESIDENT");
 
             return ResponseEntity.ok().body(Map.of(
                     "token", token,
@@ -45,7 +44,7 @@ public class ResidentService {
                     "email", resident.getEmail(),
                     "name", resident.getName(),
                     "surnames", resident.getSurnames(),
-                    "role", resident.getRole()
+                    "role", "RESIDENT"
             ));
         }
 
@@ -120,9 +119,6 @@ public class ResidentService {
 
         // Encriptar la contraseña antes de guardarla
         resident.setPassword(passwordEncoder.encode(resident.getPassword()));
-
-        // 🚨 Asignar el rol correctamente
-        resident.setRole("RESIDENT");
 
         // Guardar el residente en la base de datos
         Resident savedResident = residentRepository.save(resident);
