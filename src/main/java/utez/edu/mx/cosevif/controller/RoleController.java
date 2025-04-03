@@ -9,13 +9,13 @@ import utez.edu.mx.cosevif.model.Role;
 import java.util.List;
 
 
+
 @RestController
 @RequestMapping("/roles")
 public class RoleController {
 
-
     @GetMapping
     public ResponseEntity<?> getRoles() {
-        return ResponseEntity.ok(Role.values()); // Devuelve los roles definidos en el enum
+        return ResponseEntity.ok(Role.values());
     }
-    }
+}

@@ -18,6 +18,7 @@ public class Resident {
     private String street;
     private String phone;
     private String password;
+    private String role;
 
     @DBRef
     private House house;  // Relación con la casa
@@ -25,7 +26,7 @@ public class Resident {
     public Resident() {
     }
 
-    public Resident(String id, String name, String surnames, int age, String birthDate, String email, String address, String street, String phone, String password, House house) {
+    public Resident(String id, String name, String surnames, int age, String birthDate, String email, String address, String street, String phone, String password,String role, House house) {
         this.id = id;
         this.name = name;
         this.surnames = surnames;
@@ -36,6 +37,7 @@ public class Resident {
         this.street = street;
         this.phone = phone;
         this.password = password;
+        this.role = role; // 🚨 Asignado aquí
         this.house = house;
     }
 
@@ -125,5 +127,12 @@ public class Resident {
 
     public void setHouse(House house) {
         this.house = house;
+    }
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

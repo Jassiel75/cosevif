@@ -8,9 +8,9 @@ import utez.edu.mx.cosevif.service.GuardService;
 
 import java.util.List;
 import java.util.Optional;
-
 @RestController
-@RequestMapping("admin/guards")
+@RequestMapping("/admin/guards")
+@PreAuthorize("hasAuthority('ROLE_ADMIN')")
 public class GuardController {
 
     private final GuardService guardService;
@@ -18,6 +18,7 @@ public class GuardController {
     public GuardController(GuardService guardService) {
         this.guardService = guardService;
     }
+
     @GetMapping
     public ResponseEntity<List<Guard>> getAllGuards() {
         return ResponseEntity.ok(guardService.findAll());
@@ -31,14 +32,11 @@ public class GuardController {
 
     @PostMapping
     public ResponseEntity<Guard> createGuard(@RequestBody Guard guard) {
-        // Asignar el rol GUARDIA antes de guardar
-        guard.setRole("GUARDIA");
+        guard.setRole("ROLE_GUARDIA");
         return ResponseEntity.ok(guardService.save(guard));
     }
 
-
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateGuard(@PathVariable String id, @RequestBody Guard updatedGuard) {
         Guard updated = guardService.updateGuard(id, updatedGuard);
         if (updated != null) {
@@ -54,9 +52,8 @@ public class GuardController {
         return ResponseEntity.ok().build();
     }
 
-    // 🔹 Ruta para el dashboard del guardia
     @GetMapping("/dashboard")
-    @PreAuthorize("hasAuthority('GUARDIA')")
+    @PreAuthorize("hasAuthority('ROLE_GUARDIA')")
     public ResponseEntity<String> dashboard() {
         return ResponseEntity.ok("Bienvenido al Panel del Guardia");
     }

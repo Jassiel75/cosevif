@@ -107,4 +107,69 @@ public class VisitService {
 
         return visitRepository.findByResidentId(residentOptional.get().getId());
     }
+
+    public ResponseEntity<?> updateVisit(String token, String visitId, Visit updatedVisit) {
+        String residentEmail = jwtTokenProvider.getUsernameFromToken(token);
+        Optional<Resident> residentOptional = residentRepository.findByEmail(residentEmail);
+
+        if (residentOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Residente no encontrado.");
+        }
+
+        Resident resident = residentOptional.get();
+
+        // Verificar si la visita existe
+        Optional<Visit> visitOptional = visitRepository.findById(visitId);
+        if (visitOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Visita no encontrada.");
+        }
+
+        Visit visit = visitOptional.get();
+
+        // Verificar que la visita pertenece al residente
+        if (!visit.getResidentId().equals(resident.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permisos para modificar esta visita.");
+        }
+
+        // Actualizar los campos de la visita
+        visit.setVisitorName(updatedVisit.getVisitorName());
+        visit.setDateTime(updatedVisit.getDateTime());
+        visit.setNumPeople(updatedVisit.getNumPeople());
+        visit.setDescription(updatedVisit.getDescription());
+        visit.setVehiclePlate(updatedVisit.getVehiclePlate());
+        visit.setPassword(updatedVisit.getPassword());
+        visit.setStatus(updatedVisit.getStatus());
+
+        // Actualizar la visita en la base de datos
+        Visit updated = visitRepository.save(visit);
+        return ResponseEntity.ok(updated);
+    }
+
+    public ResponseEntity<?> deleteVisit(String token, String visitId) {
+        String residentEmail = jwtTokenProvider.getUsernameFromToken(token);
+        Optional<Resident> residentOptional = residentRepository.findByEmail(residentEmail);
+
+        if (residentOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Residente no encontrado.");
+        }
+
+        Resident resident = residentOptional.get();
+
+        // Verificar si la visita existe
+        Optional<Visit> visitOptional = visitRepository.findById(visitId);
+        if (visitOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Visita no encontrada.");
+        }
+
+        Visit visit = visitOptional.get();
+
+        // Verificar que la visita pertenece al residente
+        if (!visit.getResidentId().equals(resident.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permisos para eliminar esta visita.");
+        }
+
+        // Eliminar la visita
+        visitRepository.delete(visit);
+        return ResponseEntity.ok("Visita eliminada correctamente.");
+    }
 }

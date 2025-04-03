@@ -30,7 +30,7 @@ public class JwtTokenProvider {
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(jwtSecret) // 🔥 Usa la clave segura
+                .signWith(jwtSecret)
                 .compact();
     }
 
@@ -40,7 +40,7 @@ public class JwtTokenProvider {
                 .claim("role", role)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(jwtSecret) // 🔥 Usa la clave segura
+                .signWith(jwtSecret)
                 .compact();
     }
 
@@ -51,6 +51,15 @@ public class JwtTokenProvider {
                 .parseClaimsJws(token)
                 .getBody();
         return claims.getSubject();
+    }
+
+    public String getRoleFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(jwtSecret)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("role", String.class);
     }
 
     public boolean validateToken(String token) {
@@ -74,12 +83,5 @@ public class JwtTokenProvider {
                 .getExpiration();
         return expiration.before(new Date());
     }
-    public String getRoleFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(jwtSecret)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-        return claims.get("role", String.class);  // Extraer el rol del token
-    }
 }
+

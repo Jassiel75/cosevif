@@ -10,7 +10,6 @@ import utez.edu.mx.cosevif.repository.UserRepository;
 
 import java.util.List;
 
-
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -24,13 +23,11 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody User user) {
         // Verifica que el rol sea válido
-        if (!user.getRole().equals("ADMIN") && !user.getRole().equals("RESIDENTE") && !user.getRole().equals("GUARDIA")) {
+        if (!user.getRole().equals("ROLE_ADMIN") && !user.getRole().equals("ROLE_RESIDENT") && !user.getRole().equals("ROLE_GUARDIA")) {
             return ResponseEntity.badRequest().body("Rol no válido");
         }
 
-        // Encripta la contraseña antes de guardarla
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-
         userRepository.save(user);
         return ResponseEntity.ok("Usuario registrado exitosamente");
     }
