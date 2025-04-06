@@ -43,6 +43,9 @@ public class SecurityConfig {
                         // 🔥 Rutas accesibles solo para RESIDENT
                         .requestMatchers(HttpMethod.GET, "/auth/resident/profile").hasAuthority("RESIDENT")
                         .requestMatchers("/resident/**").hasAuthority("RESIDENT")
+                        .requestMatchers(HttpMethod.GET, "/resident/workerVisits").hasAuthority("RESIDENT")  // Acceso solo para residentes
+                        .requestMatchers(HttpMethod.POST, "/resident/workerVisits").hasAuthority("RESIDENT")  // Crear visitas de trabajadores solo para residentes
+
 
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/admin/houses").hasAuthority("ADMIN")

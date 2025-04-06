@@ -6,80 +6,87 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 
+import org.springframework.stereotype.Service;
+import org.springframework.http.ResponseEntity;
+import utez.edu.mx.cosevif.model.Visit;
+import utez.edu.mx.cosevif.repository.VisitRepository;
+import utez.edu.mx.cosevif.repository.ResidentRepository;
+import utez.edu.mx.cosevif.security.JwtTokenProvider;
+import utez.edu.mx.cosevif.model.Resident;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Base64;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import utez.edu.mx.cosevif.model.House;
-import utez.edu.mx.cosevif.model.Resident;
-import utez.edu.mx.cosevif.model.Visit;
-import utez.edu.mx.cosevif.repository.HouseRepository;
-import utez.edu.mx.cosevif.repository.ResidentRepository;
-import utez.edu.mx.cosevif.repository.VisitRepository;
-import utez.edu.mx.cosevif.security.JwtTokenProvider;
-
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Base64;
 import java.util.Optional;
 
 @Service
 public class VisitService {
 
     private final VisitRepository visitRepository;
-    private final ResidentRepository residentRepository;
-    private final HouseRepository houseRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final ResidentRepository residentRepository;
 
-    public VisitService(VisitRepository visitRepository, ResidentRepository residentRepository, JwtTokenProvider jwtTokenProvider, HouseRepository houseRepository) {
+    public VisitService(VisitRepository visitRepository, JwtTokenProvider jwtTokenProvider, ResidentRepository residentRepository) {
         this.visitRepository = visitRepository;
         this.jwtTokenProvider = jwtTokenProvider;
-        this.houseRepository = houseRepository;
         this.residentRepository = residentRepository;
     }
 
     // 🔹 Registrar una nueva visita
     public ResponseEntity<?> registerVisit(String token, Visit visit) {
-        // ✅ Obtener el ID del residente desde el token JWT
+        // Obtener el ID del residente desde el token JWT
         String residentEmail = jwtTokenProvider.getUsernameFromToken(token);
-        Optional<Resident> residentOptional = residentRepository.findByEmail(residentEmail);
 
+        Optional<Resident> residentOptional = residentRepository.findByEmail(residentEmail);
         if (residentOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Residente no encontrado.");
+            return ResponseEntity.badRequest().body("Residente no encontrado.");
         }
 
         Resident resident = residentOptional.get();
+        visit.setResidentId(resident.getId()); // Guardar el ID del residente
+        visit.setHouseId(resident.getHouse().getId()); // Guardar el ID de la casa
 
-        // ✅ Obtener la casa desde la relación (ya no usamos houseId, accedemos directamente al objeto House)
-        House house = resident.getHouse(); // Obtener el objeto House completo desde la relación
-        int houseNumber = house != null ? house.getHouseNumber() : -1;
-
-        // ✅ Asignar datos de la visita
-        visit.setResidentId(resident.getId());
-        visit.setHouseId(resident.getHouse().getId());  // Sigue siendo necesario tener el ID de la casa para la relación en la base de datos
+        // Asignar el estado inicial
         visit.setStatus("PENDIENTE");
 
-        // ✅ Generar el código QR si falta 1 hora o menos para la visita
-        LocalDateTime qrGenerationTime = visit.getDateTime().minusHours(1);
-        if (LocalDateTime.now().isAfter(qrGenerationTime)) {
-            visit.setQrCode(generateQRCode(visit, String.valueOf(houseNumber))); // ✅ Pasar houseNumber al QR
-        } else {
-            visit.setQrCode(null);
-        }
+        // IMPORTANTE: No modificar la fecha y hora, solo generar QR y determinar estado
+        generateQRAndDetermineStatus(visit);
 
-        // ✅ Guardar la visita en la base de datos
+        // Guardar la visita en la base de datos
         Visit savedVisit = visitRepository.save(visit);
         return ResponseEntity.ok(savedVisit);
     }
 
-    // 🔹 Generar QR en Base64 con todos los datos necesarios
-    private String generateQRCode(Visit visit, String houseNumber) {
+    // 🔹 Generar QR y determinar estado sin modificar la fecha
+    private void generateQRAndDetermineStatus(Visit visit) {
+        // NO modificar la fecha y hora de la visita
+        LocalDateTime visitDate = visit.getDateTime();
+        LocalDateTime now = LocalDateTime.now();
+
+        // Siempre generar el QR independientemente del estado
+        visit.setQrCode(generateQRCode(visit));
+
+        // Cambiar estado basado en la diferencia de tiempo
+        long hoursDifference = java.time.Duration.between(now, visitDate).toHours();
+
+        if (hoursDifference > 1) {
+            visit.setStatus("PENDIENTE");
+        } else if (hoursDifference >= -2) {
+            visit.setStatus("EN_PROGRESO");
+        } else {
+            visit.setStatus("CADUCADO");
+        }
+    }
+
+    // 🔹 Función para generar QR en Base64 con todos los datos necesarios
+    private String generateQRCode(Visit visit) {
         try {
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
             String qrContent = "📌 VISITA REGISTRADA \n" +
-                    "🏡 Casa: " + houseNumber + "\n" +
-                    "👤 Visitante: " + (visit.getVisitorName() != null ? visit.getVisitorName() : "No registrado") + "\n" +
+                    "🏡 Casa: " + visit.getHouseId() + "\n" +
+                    "👤 Visitante: " + visit.getVisitorName() + "\n" +
                     "📅 Fecha y Hora: " + visit.getDateTime() + "\n" +
                     "🚗 Vehículo: " + (visit.getVehiclePlate() != null ? visit.getVehiclePlate() : "No registrado") + "\n" +
                     "🔑 Clave de acceso: " + visit.getPassword() + "\n" +
@@ -96,80 +103,71 @@ public class VisitService {
         }
     }
 
-    // 🔹 Obtener visitas de un residente autenticado
+    // 🔹 Obtener todas las visitas del residente
     public List<Visit> getVisitsByResident(String token) {
         String residentEmail = jwtTokenProvider.getUsernameFromToken(token);
         Optional<Resident> residentOptional = residentRepository.findByEmail(residentEmail);
 
         if (residentOptional.isEmpty()) {
-            return List.of();
+            return List.of();  // Devuelve lista vacía si no se encuentra el residente
         }
 
-        return visitRepository.findByResidentId(residentOptional.get().getId());
+        return visitRepository.findByResidentId(residentOptional.get().getId()); // Buscamos las visitas del residente por su ID
     }
 
+    // 🔹 Actualizar visita
     public ResponseEntity<?> updateVisit(String token, String visitId, Visit updatedVisit) {
-        String residentEmail = jwtTokenProvider.getUsernameFromToken(token);
-        Optional<Resident> residentOptional = residentRepository.findByEmail(residentEmail);
-
-        if (residentOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Residente no encontrado.");
-        }
-
-        Resident resident = residentOptional.get();
-
-        // Verificar si la visita existe
         Optional<Visit> visitOptional = visitRepository.findById(visitId);
-        if (visitOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Visita no encontrada.");
+        if (!visitOptional.isPresent()) {
+            return ResponseEntity.notFound().build();
         }
 
         Visit visit = visitOptional.get();
 
-        // Verificar que la visita pertenece al residente
-        if (!visit.getResidentId().equals(resident.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permisos para modificar esta visita.");
-        }
-
-        // Actualizar los campos de la visita
+        // Actualizar campos sin modificar la fecha y hora
         visit.setVisitorName(updatedVisit.getVisitorName());
-        visit.setDateTime(updatedVisit.getDateTime());
-        visit.setNumPeople(updatedVisit.getNumPeople());
         visit.setDescription(updatedVisit.getDescription());
+        visit.setNumPeople(updatedVisit.getNumPeople());
         visit.setVehiclePlate(updatedVisit.getVehiclePlate());
         visit.setPassword(updatedVisit.getPassword());
-        visit.setStatus(updatedVisit.getStatus());
 
-        // Actualizar la visita en la base de datos
-        Visit updated = visitRepository.save(visit);
-        return ResponseEntity.ok(updated);
-    }
-
-    public ResponseEntity<?> deleteVisit(String token, String visitId) {
-        String residentEmail = jwtTokenProvider.getUsernameFromToken(token);
-        Optional<Resident> residentOptional = residentRepository.findByEmail(residentEmail);
-
-        if (residentOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Residente no encontrado.");
+        // IMPORTANTE: Mantener la fecha y hora exactamente como se recibió
+        if (updatedVisit.getDateTime() != null) {
+            visit.setDateTime(updatedVisit.getDateTime());
         }
 
-        Resident resident = residentOptional.get();
+        // Generar QR y determinar estado
+        generateQRAndDetermineStatus(visit);
 
-        // Verificar si la visita existe
+        visitRepository.save(visit);
+        return ResponseEntity.ok(visit);
+    }
+
+    // 🔹 Eliminar una visita
+    public ResponseEntity<?> deleteVisit(String token, String visitId) {
         Optional<Visit> visitOptional = visitRepository.findById(visitId);
-        if (visitOptional.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Visita no encontrada.");
+        if (!visitOptional.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        visitRepository.delete(visitOptional.get());
+        return ResponseEntity.noContent().build();
+    }
+
+    // 🔹 Cancelar una visita
+    public ResponseEntity<?> cancelVisit(String token, String visitId) {
+        Optional<Visit> visitOptional = visitRepository.findById(visitId);
+        if (!visitOptional.isPresent()) {
+            return ResponseEntity.notFound().build();
         }
 
         Visit visit = visitOptional.get();
+        visit.setStatus("CANCELADO");
 
-        // Verificar que la visita pertenece al residente
-        if (!visit.getResidentId().equals(resident.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("No tienes permisos para eliminar esta visita.");
-        }
+        // Siempre generar el QR incluso cuando se cancela
+        visit.setQrCode(generateQRCode(visit));
 
-        // Eliminar la visita
-        visitRepository.delete(visit);
-        return ResponseEntity.ok("Visita eliminada correctamente.");
+        visitRepository.save(visit);
+        return ResponseEntity.ok(visit);
     }
 }
+
