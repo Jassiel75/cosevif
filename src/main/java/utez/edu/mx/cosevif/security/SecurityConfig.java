@@ -53,11 +53,6 @@ public class SecurityConfig {
 
                         // 🔥 Permitir acceso público a imágenes
                         .requestMatchers("/uploads/**").permitAll()
-
-
-
-
-
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
