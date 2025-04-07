@@ -12,6 +12,7 @@ import utez.edu.mx.cosevif.security.JwtTokenProvider;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 @Service
@@ -72,8 +73,6 @@ public class WorkerVisitService {
         }
     }
 
-
-
     // 🔹 Obtener todas las visitas (a futuro puedes filtrarlas por ID)
     public List<WorkerVisitDTO> getWorkerVisitsByResident(String authHeader) {
         String token = authHeader.substring(7);
@@ -107,19 +106,37 @@ public class WorkerVisitService {
         return ResponseEntity.status(404).body("Visita de trabajador no encontrada.");
     }
 
-    public ResponseEntity<?> updateWorkerVisit(String authHeader, String id, WorkerVisit updatedVisit) {
+    public ResponseEntity<?> updateWorkerVisit(String authHeader, String id, String workerName, int age,
+                                               String address, String dateTime, MultipartFile inePhoto) {
         Optional<WorkerVisit> workerVisitOptional = workerVisitRepository.findById(id);
         if (workerVisitOptional.isPresent()) {
             WorkerVisit workerVisit = workerVisitOptional.get();
-            workerVisit.setWorkerName(updatedVisit.getWorkerName());
-            workerVisit.setAge(updatedVisit.getAge());
-            workerVisit.setAddress(updatedVisit.getAddress());
-            workerVisit.setInePhoto(updatedVisit.getInePhoto());
-            workerVisit.setDateTime(updatedVisit.getDateTime());
+
+            workerVisit.setWorkerName(workerName);
+            workerVisit.setAge(age);
+            workerVisit.setAddress(address);
+
+            try {
+                LocalDateTime parsedDate = LocalDateTime.parse(dateTime);
+                workerVisit.setDateTime(parsedDate);
+            } catch (DateTimeParseException e) {
+                return ResponseEntity.badRequest().body("Formato de fecha inválido");
+            }
+
+            if (inePhoto != null && !inePhoto.isEmpty()) {
+                try {
+                    byte[] imageBytes = inePhoto.getBytes();
+                    String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+                    workerVisit.setInePhoto(base64Image);
+                } catch (IOException e) {
+                    return ResponseEntity.status(500).body("Error al procesar la imagen");
+                }
+            }
 
             workerVisitRepository.save(workerVisit);
             return ResponseEntity.ok(workerVisit);
         }
+
         return ResponseEntity.status(404).body("Visita de trabajador no encontrada.");
     }
 }

@@ -62,7 +62,11 @@ public class WorkerVisitController {
     @PutMapping("/workerVisits/{id}")
     public ResponseEntity<?> updateWorkerVisit(@RequestHeader("Authorization") String authHeader,
                                                @PathVariable String id,
-                                               @RequestBody WorkerVisit updatedVisit) {
-        return workerVisitService.updateWorkerVisit(authHeader, id, updatedVisit);
+                                               @RequestParam("workerName") String workerName,
+                                               @RequestParam("age") int age,
+                                               @RequestParam("address") String address,
+                                               @RequestParam("dateTime") String dateTime,
+                                               @RequestParam(value = "inePhoto", required = false) MultipartFile inePhoto) {
+        return workerVisitService.updateWorkerVisit(authHeader, id, workerName, age, address, dateTime, inePhoto);
     }
 }
