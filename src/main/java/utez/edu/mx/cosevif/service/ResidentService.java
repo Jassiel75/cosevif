@@ -38,18 +38,31 @@ public class ResidentService {
             Resident resident = residentOptional.get();
             String token = jwtTokenProvider.generateToken(resident.getEmail(), "RESIDENT");
 
-            return ResponseEntity.ok().body(Map.of(
-                    "token", token,
-                    "id", resident.getId(),
-                    "email", resident.getEmail(),
-                    "name", resident.getName(),
-                    "surnames", resident.getSurnames(),
-                    "role", "RESIDENT"
-            ));
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
+            response.put("id", resident.getId());
+            response.put("email", resident.getEmail());
+            response.put("name", resident.getName());
+            response.put("surnames", resident.getSurnames());
+            response.put("phone", resident.getPhone());
+            response.put("address", resident.getAddress());
+            response.put("street", resident.getStreet());
+            response.put("age", resident.getAge());
+            response.put("birthDate", resident.getBirthDate());
+            response.put("role", "RESIDENT");
+
+            // Incluir ID y número de casa si existe
+            if (resident.getHouse() != null) {
+                response.put("houseId", resident.getHouse().getId());
+                response.put("houseNumber", resident.getHouse().getHouseNumber());
+            }
+
+            return ResponseEntity.ok(response);
         }
 
         return ResponseEntity.status(401).body("Credenciales incorrectas.");
     }
+
 
     // 🔹 Obtener el perfil del residente autenticado
     public ResponseEntity<?> getResidentProfile(String token) {
