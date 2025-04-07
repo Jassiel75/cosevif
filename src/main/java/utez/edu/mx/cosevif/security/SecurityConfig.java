@@ -33,6 +33,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/guard/login").permitAll()  // 🔥 Agregado para el guardia
                         .requestMatchers("/guard/**").hasAuthority("GUARDIA")
 
+                        .requestMatchers("/public/**").permitAll()
 
 
                         // 🔥 Rutas accesibles solo para ADMIN

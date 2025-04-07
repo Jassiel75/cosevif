@@ -21,6 +21,8 @@ public class Visit {
     private String status; // 🔹 Estado de la visita
     private String qrCode; // 🔹 Código QR generado para la visita
 
+
+
     public Visit() {
     }
 
