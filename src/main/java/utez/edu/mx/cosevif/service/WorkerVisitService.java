@@ -12,7 +12,6 @@ import utez.edu.mx.cosevif.security.JwtTokenProvider;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeParseException;
 import java.util.*;
 
 @Service
@@ -119,7 +118,7 @@ public class WorkerVisitService {
             try {
                 LocalDateTime parsedDate = LocalDateTime.parse(dateTime);
                 workerVisit.setDateTime(parsedDate);
-            } catch (DateTimeParseException e) {
+            } catch (Exception e) {
                 return ResponseEntity.badRequest().body("Formato de fecha inválido");
             }
 
