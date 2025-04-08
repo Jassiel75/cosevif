@@ -63,7 +63,6 @@ public class ResidentService {
         return ResponseEntity.status(401).body("Credenciales incorrectas.");
     }
 
-
     // 🔹 Obtener el perfil del residente autenticado
     public ResponseEntity<?> getResidentProfile(String token) {
         String email = jwtTokenProvider.getUsernameFromToken(token.replace("Bearer ", ""));
@@ -188,12 +187,54 @@ public class ResidentService {
         Optional<Resident> residentOptional = residentRepository.findById(id);
 
         if (residentOptional.isPresent()) {
-            // Simplemente eliminar el residente
-            // La casa seguirá existiendo en la base de datos y estará disponible para asignar a otro residente
             residentRepository.deleteById(id);
             return ResponseEntity.noContent().build();
         }
 
         return ResponseEntity.notFound().build();
     }
+
+    // 🔹 Modificación en ResidentService para permitir que un residente actualice su propio perfil
+    public ResponseEntity<?> updateResidentProfile(String token, Resident updatedResident) {
+        // Extraer el token eliminando el prefijo "Bearer "
+        String jwtToken = token.replace("Bearer ", "");
+        String email = jwtTokenProvider.getUsernameFromToken(jwtToken);
+
+        Optional<Resident> residentOptional = residentRepository.findByEmail(email);
+
+        if (residentOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Residente no encontrado.");
+        }
+
+        Resident existingResident = residentOptional.get();
+
+        // Solo permitir modificar su propio perfil
+        existingResident.setName(updatedResident.getName());
+        existingResident.setSurnames(updatedResident.getSurnames());
+        existingResident.setAge(updatedResident.getAge());
+        existingResident.setBirthDate(updatedResident.getBirthDate());
+        existingResident.setEmail(updatedResident.getEmail());
+        existingResident.setAddress(updatedResident.getAddress());
+        existingResident.setStreet(updatedResident.getStreet());
+        existingResident.setPhone(updatedResident.getPhone());
+
+        // Si el residente proporcionó una nueva contraseña, la encriptamos y la guardamos
+        if (updatedResident.getPassword() != null && !updatedResident.getPassword().isEmpty()) {
+            existingResident.setPassword(passwordEncoder.encode(updatedResident.getPassword()));
+        }
+
+        // Guardar los cambios
+        Resident savedResident = residentRepository.save(existingResident);
+
+        // Crear una respuesta más amigable sin exponer datos sensibles
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Perfil actualizado correctamente");
+        response.put("resident", savedResident);
+
+        return ResponseEntity.ok(response);
+    }
+
+
+
+
 }

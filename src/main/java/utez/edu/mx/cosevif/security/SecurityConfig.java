@@ -33,6 +33,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/guard/login").permitAll()  // 🔥 Agregado para el guardia
                         .requestMatchers("/guard/**").hasAuthority("GUARDIA")
 
+                        .requestMatchers(HttpMethod.POST, "/auth/resident/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/auth/resident/profile").hasAuthority("RESIDENT")
+                        .requestMatchers(HttpMethod.PUT, "/auth/resident/profile").hasAuthority("RESIDENT")
+
                         .requestMatchers("/public/**").permitAll()
 
 
