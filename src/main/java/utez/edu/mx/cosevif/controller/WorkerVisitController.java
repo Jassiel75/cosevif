@@ -8,11 +8,9 @@ import utez.edu.mx.cosevif.model.WorkerVisit;
 import utez.edu.mx.cosevif.security.JwtTokenProvider;
 import utez.edu.mx.cosevif.service.WorkerVisitService;
 
-import java.time.LocalDateTime;
-
 @RestController
 @RequestMapping("/resident")
-@PreAuthorize("hasAuthority('RESIDENT')")
+@PreAuthorize("hasAuthority('RESIDENT')") // Solo residentes pueden acceder a estos endpoints
 @CrossOrigin(origins = "*") // Permitir solicitudes de cualquier origen
 public class WorkerVisitController {
 
@@ -34,31 +32,30 @@ public class WorkerVisitController {
                                                  @RequestParam(value = "inePhoto", required = false) MultipartFile inePhoto) {
         String residentId = jwtTokenProvider.getUsernameFromToken(authHeader.substring(7));  // Extraer y decodificar el token
 
-
         // Llamar al servicio para registrar la visita del trabajador
         return workerVisitService.registerWorkerVisit(authHeader, workerName, age, address, dateTime, inePhoto);
     }
 
-    // Endpoint para obtener todas las visitas de trabajadores por residente
+    // Obtener todas las visitas de trabajadores por residente
     @GetMapping("/workerVisits")
     public ResponseEntity<?> getWorkerVisitsByResident(@RequestHeader("Authorization") String authHeader) {
         return ResponseEntity.ok(workerVisitService.getWorkerVisitsByResident(authHeader));
     }
 
-    // Endpoint para obtener una visita de trabajador por su ID
+    // Obtener una visita de trabajador por su ID
     @GetMapping("/workerVisits/{id}")
     public ResponseEntity<?> getWorkerVisit(@PathVariable String id) {
         return workerVisitService.getWorkerVisitById(id);
     }
 
-    // Endpoint para eliminar una visita de trabajador
+    // Eliminar una visita de trabajador
     @DeleteMapping("/workerVisits/{id}")
     public ResponseEntity<?> deleteWorkerVisit(@RequestHeader("Authorization") String authHeader,
                                                @PathVariable String id) {
         return workerVisitService.deleteWorkerVisit(authHeader, id);
     }
 
-    // Endpoint para actualizar una visita de trabajador
+    // Actualizar una visita de trabajador
     @PutMapping("/workerVisits/{id}")
     public ResponseEntity<?> updateWorkerVisit(@RequestHeader("Authorization") String authHeader,
                                                @PathVariable String id,
