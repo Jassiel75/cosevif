@@ -23,40 +23,33 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtTokenFilter jwtTokenFilter) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ Permitir CORS
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf().disable()
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/auth/resident/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/admin/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/guard/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/register").permitAll()
 
-                        .requestMatchers(HttpMethod.POST, "/auth/guard/login").permitAll()  // 🔥 Agregado para el guardia
-                        .requestMatchers("/guard/**").hasAuthority("GUARDIA")
-
-                        .requestMatchers(HttpMethod.POST, "/auth/resident/login").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/auth/resident/profile").hasAuthority("RESIDENT")
-                        .requestMatchers(HttpMethod.PUT, "/auth/resident/profile").hasAuthority("RESIDENT")
-
                         .requestMatchers("/public/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
 
-
-                        // 🔥 Rutas accesibles solo para ADMIN
+                        // Acceso solo para ADMIN
                         .requestMatchers("/admin/**").hasAuthority("ADMIN")
                         .requestMatchers("/admin/houses/**").hasAuthority("ADMIN")
                         .requestMatchers("/admin/guard/**").hasAuthority("ADMIN")
 
-                        // 🔥 Rutas accesibles solo para RESIDENT
-                        .requestMatchers(HttpMethod.GET, "/auth/resident/profile").hasAuthority("RESIDENT")
+                        // Acceso solo para GUARDIA
+                        .requestMatchers("/guard/**").hasAuthority("GUARDIA")
+
+                        // Acceso solo para RESIDENT
                         .requestMatchers("/resident/**").hasAuthority("RESIDENT")
-                        .requestMatchers(HttpMethod.GET, "/resident/workerVisits").hasAuthority("RESIDENT")  // Acceso solo para residentes
-                        .requestMatchers(HttpMethod.POST, "/resident/workerVisits").hasAuthority("RESIDENT")  // Crear visitas de trabajadores solo para residentes
+                        .requestMatchers(HttpMethod.GET, "/auth/resident/profile").hasAuthority("RESIDENT")
+                        .requestMatchers(HttpMethod.PUT, "/auth/resident/profile").hasAuthority("RESIDENT")
+                        .requestMatchers(HttpMethod.GET, "/resident/workerVisits").hasAuthority("RESIDENT")
+                        .requestMatchers(HttpMethod.POST, "/resident/workerVisits").hasAuthority("RESIDENT")
 
-
-                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/admin/houses").hasAuthority("ADMIN")
-
-                        // 🔥 Permitir acceso público a imágenes
-                        .requestMatchers("/uploads/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -65,11 +58,19 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 🔥 Agregar configuración de CORS
     @Bean
     public UrlBasedCorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(List.of("http://localhost:5173")); // ⚠️ Ajusta al puerto de React
+
+        // 🌐 Orígenes específicos permitidos
+        corsConfig.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "http://cosevif-frontend.s3-website-us-east-1.amazonaws.com"
+        ));
+
+        // 🟡 También aceptar todos los orígenes (solo para pruebas, se recomienda quitar en producción)
+        corsConfig.addAllowedOriginPattern("*");
+
         corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         corsConfig.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         corsConfig.setAllowCredentials(true);
